@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 URLs = {
     '전체': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1',
     '일반공지': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EC%9D%BC%EB%B0%98%EA%B3%B5%EC%A7%80',
@@ -13,54 +14,57 @@ URLs = {
 }
 
 
-def get_notice(category='전체', amount=1):
-    notice_list = []
+def get_notice(searchCategory='전체', amount=1, *dataTypes):
+    noticeList = []
 
-    if amount <= 15:
-        response = requests.get(URLs[category])
+    if searchCategory not in URLs:
+        raise ValueError('category must be one of 전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과')
+    
+    elif set(dataTypes) - set(['link', 'title', 'category', 'createDate']):
+        raise ValueError('data_type must be one of link, title, category, createDate')
+
+    elif amount <= 15:
+        response = requests.get(URLs[searchCategory])
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        link_list = list(soup.select('tr:not(.bo_notice) td div.bo_tit a'))
+        searchList = list(soup.find('tbody').find_all('tr', class_=lambda x: x != 'bo_notice'))
 
         for idx in range(amount):
-            link = link_list[idx].get('href')
-            title = link_list[idx].text.strip()
+            link = searchList[idx].select('div.bo_tit a')[0].get('href')
+            title = searchList[idx].select('div.bo_tit a')[0].text.strip()
+            category = searchList[idx].select('td.td_subject a.bo_cate_link')[0].text if searchCategory == '전체' else searchCategory
+            createDate = searchList[idx].find('td', class_='td_datetime hidden-xs').text
 
-            response = requests.get(link)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            category = soup.select_one('.bo_v_cate').text
-            content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
-            date = '20' + soup.select_one('.if_date').text.replace('작성일 ', '')
-
-            notice_list.append((link, title, category, date, content))
+            if dataTypes == ():
+                noticeList.append([link, title, category, createDate])
+            else:
+                noticeList.append([locals()[data] for data in dataTypes])
 
     else:
         pages = amount // 15 + 2
 
         for page in range(1, pages):
-            response = requests.get(URLs[category] + '&page=' + str(page))
+            response = requests.get(URLs[searchCategory] + '&page=' + str(page))
             soup = BeautifulSoup(response.text, 'html.parser')
+            searchList = list(soup.find('tbody').find_all('tr', class_=lambda x: x != 'bo_notice'))
 
-            link_list = list(soup.select('tr:not(.bo_notice) td div.bo_tit a'))
-
-            if link_list == []:
+            if searchList == []:
                 break
 
             for idx in range(15 if page != pages - 1 else amount % 15):
-                link = link_list[idx].get('href')
-                title = link_list[idx].text.strip()
-    
-                response = requests.get(link)
-                soup = BeautifulSoup(response.text, 'html.parser')
-                category = soup.select_one('.bo_v_cate').text
-                content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
-                date = '20' + soup.select_one('.if_date').text.replace('작성일 ', '')
+                link = searchList[idx].select('div.bo_tit a')[0].get('href')
+                title = searchList[idx].select('div.bo_tit a')[0].text.strip()
+                category = searchList[idx].select('td.td_subject a.bo_cate_link')[0].text if searchCategory == '전체' else searchCategory
+                createDate = searchList[idx].find('td', class_='td_datetime hidden-xs').text
 
-                notice_list.append((link, title, category, date, content))
+                if dataTypes == ():
+                    noticeList.append([link, title, category, createDate])
+                else:
+                    noticeList.append([locals()[data] for data in dataTypes])
 
-    return notice_list
+    return noticeList
 
 if __name__ == '__main__':
-    notice_list = get_notice('전체', 50)
-    for notice in notice_list:
-        print(notice[1])
+    noticeList = get_notice('글솝', 55)
+    print(len(noticeList))
+    for notice in noticeList:
+        print(notice)
