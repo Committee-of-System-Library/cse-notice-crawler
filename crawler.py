@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 
+import sqlite3
+
 
 URLs = {
     '전체': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1',
@@ -44,6 +46,10 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
 
             for idx in range(amount):
                 link = searchList[idx].select('div.bo_tit a')[0].get('href')
+
+                response = requests.get(link)
+                soup = BeautifulSoup(response.text, 'html.parser')
+
                 title = searchList[idx].select('div.bo_tit a')[0].text.strip()
                 category = searchList[idx].select('td.td_subject a.bo_cate_link')[0].text if searchCategory == '전체' else searchCategory
                 createDate = searchList[idx].find('td', class_='td_datetime hidden-xs').text
@@ -66,6 +72,10 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
 
                 for idx in range(15 if page != pages - 1 else amount % 15):
                     link = searchList[idx].select('div.bo_tit a')[0].get('href')
+
+                    response = requests.get(link)
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
                     title = searchList[idx].select('div.bo_tit a')[0].text.strip()
                     category = searchList[idx].select('td.td_subject a.bo_cate_link')[0].text if searchCategory == '전체' else searchCategory
                     createDate = searchList[idx].find('td', class_='td_datetime hidden-xs').text
@@ -78,7 +88,7 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
         return noticeList
 
 if __name__ == '__main__':
-    noticeList = get_notice('전체', 55)
+    noticeList = get_notice('전체', 1000)
     print(len(noticeList))
     for notice in noticeList:
         print(notice)
