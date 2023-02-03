@@ -138,7 +138,4 @@ def get_notice_from_db(searchCategory='전체', amount=1, *dataTypes):
         return noticeList
 
 if __name__ == '__main__':
-    createTable()
-    noticeList = get_notice(searchCategory='전체', amount=5919)
-    insert_notice(noticeList)
-    print(len(noticeList))
+    print(get_notice_from_db('심컴', 10, 'createDate', 'title'))
