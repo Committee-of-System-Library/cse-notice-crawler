@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 
+import schedule
+
 import sqlite3
 
 
@@ -15,6 +17,7 @@ URLs = {
     '대학원 계약학과': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90+%EA%B3%84%EC%95%BD%ED%95%99%EA%B3%BC'
 }
 
+num = None
 link = None
 title = None
 category = None
@@ -22,12 +25,12 @@ createDate = None
 content = None
 
 
-def createTable():
+def create_table():
     conn = sqlite3.connect('notice.db')
     c = conn.cursor()
 
     c.execute('''CREATE TABLE IF NOT EXISTS Notice
-                (link TEXT, title TEXT, category TEXT, createDate DateTime, content LONGTEXT)''')
+                (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, createDate DateTime, content LONGTEXT)''')
 
     conn.commit()
     conn.close()
@@ -39,13 +42,13 @@ def connectDB():
     return conn, c
 
 def get_notice(searchCategory='전체', amount=1, *dataTypes):
-    global link, title, category, createDate, content
+    global num, link, title, category, createDate, content
 
     if searchCategory not in URLs:
         raise ValueError('category must be one of 전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과')
     
-    elif set(dataTypes) - set(['link', 'title', 'category', 'createDate', 'content']):
-        raise ValueError('data_type must be one of link, title, category, createDate, content')
+    elif set(dataTypes) - set(['num', 'link', 'title', 'category', 'createDate', 'content']):
+        raise ValueError('data_type must be one of num, link, title, category, createDate, content')
 
     else:
         noticeList = []
@@ -62,6 +65,7 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
             searchList = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
             for idx in range(amount):
+                num = limit - idx
                 link = searchList[idx].get('href')
 
                 response = requests.get(link)
@@ -89,6 +93,7 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
                     break
 
                 for idx in range(15 if page != pages - 1 else amount % 15):
+                    num = limit - (page - 1) * 15 - idx
                     link = searchList[idx].get('href')
 
                     response = requests.get(link)
@@ -100,7 +105,7 @@ def get_notice(searchCategory='전체', amount=1, *dataTypes):
                     content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
                     if dataTypes == ():
-                        noticeList.append([link, title, category, createDate, content])
+                        noticeList.append([num, link, title, category, createDate, content])
                     else:
                         noticeList.append([globals()[data] for data in dataTypes])
 
@@ -110,7 +115,7 @@ def insert_notice(noticeList):
     conn, c = connectDB()
 
     for notice in noticeList:
-        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?)', notice)
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice)
 
     conn.commit()
     conn.close()
@@ -121,8 +126,8 @@ def get_notice_from_db(searchCategory='전체', amount=1, *dataTypes):
     if searchCategory not in URLs:
         raise ValueError('category must be one of 전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과')
     
-    elif set(dataTypes) - set(['link', 'title', 'category', 'createDate', 'content']):
-        raise ValueError('data_type must be one of link, title, category, createDate, content')
+    elif set(dataTypes) - set(['num', 'link', 'title', 'category', 'createDate', 'content']):
+        raise ValueError('data_type must be one of num, link, title, category, createDate, content')
 
     else:
         if dataTypes == ():
@@ -137,5 +142,26 @@ def get_notice_from_db(searchCategory='전체', amount=1, *dataTypes):
 
         return noticeList
 
+# def updateDB():
+#     conn, c = connectDB()
+
+#     c.execute('SELECT COUNT(*) FROM Notice')
+#     rowCount = c.fetchone()[0]
+
+#     if rowCount == 0:
+#         noticeList = get_notice()
+#         insert_notice(noticeList)
+    
+#     else:
+#         c.execute('SELECT createDate FROM Notice ORDER BY createDate DESC LIMIT 1')
+#         latestDate = c.fetchone()[0]
+
+#         noticeList = get_notice(amount=1)
+
+#         if noticeList[0][3] != latestDate:
+#             insert_notice(noticeList)
+
 if __name__ == '__main__':
-    print(get_notice_from_db('심컴', 10, 'createDate', 'title'))
+    create_table()
+    noticeList = get_notice(amount=5923)
+    insert_notice(noticeList)
