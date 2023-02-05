@@ -142,26 +142,17 @@ def get_notice_from_db(searchCategory='전체', amount=1, *dataTypes):
 
         return noticeList
 
-# def updateDB():
-#     conn, c = connectDB()
+def updateDB():
+    conn, c = connectDB()
 
-#     c.execute('SELECT COUNT(*) FROM Notice')
-#     rowCount = c.fetchone()[0]
+    c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
+    lastNum = c.fetchone()[0]
 
-#     if rowCount == 0:
-#         noticeList = get_notice()
-#         insert_notice(noticeList)
-    
-#     else:
-#         c.execute('SELECT createDate FROM Notice ORDER BY createDate DESC LIMIT 1')
-#         latestDate = c.fetchone()[0]
+    noticeList = get_notice(amount=30)
 
-#         noticeList = get_notice(amount=1)
+    for noticeIndx in range(noticeList[0][0] - lastNum):
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
 
-#         if noticeList[0][3] != latestDate:
-#             insert_notice(noticeList)
 
 if __name__ == '__main__':
     create_table()
-    noticeList = get_notice(amount=5923)
-    insert_notice(noticeList)
