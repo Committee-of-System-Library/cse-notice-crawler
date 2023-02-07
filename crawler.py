@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import schedule
 
 import sqlite3
+import pymysql
 
 
 URLs = {
@@ -21,16 +22,16 @@ num = None
 link = None
 title = None
 category = None
-createDate = None
+created_at = None
 content = None
 
 
-def create_table():
+def createTable():
     conn = sqlite3.connect('notice.db')
     c = conn.cursor()
 
     c.execute('''CREATE TABLE IF NOT EXISTS Notice
-                (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, createDate DateTime, content LONGTEXT)''')
+                (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT)''')
 
     conn.commit()
     conn.close()
@@ -41,106 +42,72 @@ def connectDB():
 
     return conn, c
 
-def get_notice(searchCategory='전체', amount=1, *dataTypes):
-    global num, link, title, category, createDate, content
-
-    if searchCategory not in URLs:
-        raise ValueError('category must be one of 전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과')
+def getNotice(search_category='전체', amount=1, *data_types):
+    global num, link, title, category, created_at, content
     
-    elif set(dataTypes) - set(['num', 'link', 'title', 'category', 'createDate', 'content']):
-        raise ValueError('data_type must be one of num, link, title, category, createDate, content')
+    notice_list = []
 
-    else:
-        noticeList = []
+    response = requests.get(URLs[search_category])
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-        response = requests.get(URLs[searchCategory])
+    limit = int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
+
+    if amount > limit or amount < 0:
+        amount = limit
+
+    pages = amount // 15 + 2
+
+
+    for page in range(1, pages):
+        response = requests.get(URLs[search_category] + '&page=' + str(page))
         soup = BeautifulSoup(response.text, 'html.parser')
+        search_list = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-        limit = int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
+        if search_list == []:
+            break
 
-        if amount > limit:
-            amount = limit
+        for idx in range(15 if page != pages - 1 else amount % 15):
+            num = limit - (page - 1) * 15 - idx
+            link = search_list[idx].get('href')
 
-        if amount <= 15:
-            searchList = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
+            response = requests.get(link)
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-            for idx in range(amount):
-                num = limit - idx
-                link = searchList[idx].get('href')
+            title = soup.select_one('.bo_v_tit').text.strip()
+            category = soup.select_one('.bo_v_cate').text if search_category == '전체' else search_category
+            created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
+            content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
-                response = requests.get(link)
-                soup = BeautifulSoup(response.text, 'html.parser')
+            if data_types == ():
+                notice_list.append([num, link, title, category, created_at, content])
+            else:
+                notice_list.append([globals()[data] for data in data_types])
 
-                title = soup.select_one('.bo_v_tit').text.strip()
-                category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
-                createDate = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
-                content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
+    return notice_list
 
-                if dataTypes == ():
-                    noticeList.append([link, title, category, createDate, content])
-                else:
-                    noticeList.append([globals()[data] for data in dataTypes])
-
-        else:
-            pages = amount // 15 + 2
-
-            for page in range(1, pages):
-                response = requests.get(URLs[searchCategory] + '&page=' + str(page))
-                soup = BeautifulSoup(response.text, 'html.parser')
-                searchList = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
-
-                if searchList == []:
-                    break
-
-                for idx in range(15 if page != pages - 1 else amount % 15):
-                    num = limit - (page - 1) * 15 - idx
-                    link = searchList[idx].get('href')
-
-                    response = requests.get(link)
-                    soup = BeautifulSoup(response.text, 'html.parser')
-
-                    title = soup.select_one('.bo_v_tit').text.strip()
-                    category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
-                    createDate = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
-                    content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
-
-                    if dataTypes == ():
-                        noticeList.append([num, link, title, category, createDate, content])
-                    else:
-                        noticeList.append([globals()[data] for data in dataTypes])
-
-        return noticeList
-
-def insert_notice(noticeList):
+def insertNotice(notice_list):
     conn, c = connectDB()
 
-    for notice in noticeList:
+    for notice in notice_list:
         c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice)
 
     conn.commit()
     conn.close()
 
-def get_notice_from_db(searchCategory='전체', amount=1, *dataTypes):
+def getDB(search_category='전체', amount=1, *data_types):
     conn, c = connectDB()
 
-    if searchCategory not in URLs:
-        raise ValueError('category must be one of 전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과')
-    
-    elif set(dataTypes) - set(['num', 'link', 'title', 'category', 'createDate', 'content']):
-        raise ValueError('data_type must be one of num, link, title, category, createDate, content')
-
+    if data_types == ():
+        c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (search_category, amount))
     else:
-        if dataTypes == ():
-            c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY createDate DESC LIMIT ?', (searchCategory, amount))
-        else:
-            c.execute('SELECT ' + ', '.join(dataTypes) + ' FROM Notice WHERE category = ? ORDER BY createDate DESC LIMIT ?', (searchCategory, amount))
+        c.execute('SELECT ' + ', '.join(data_types) + ' FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (search_category, amount))
 
-        noticeList = c.fetchall()
+    notice_list = c.fetchall()
 
-        conn.commit()
-        conn.close()
+    conn.commit()
+    conn.close()
 
-        return noticeList
+    return notice_list
 
 def updateDB():
     conn, c = connectDB()
@@ -148,11 +115,11 @@ def updateDB():
     c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
     lastNum = c.fetchone()[0]
 
-    noticeList = get_notice(amount=30)
+    notice_list = getNotice(amount=30)
 
-    for noticeIndx in range(noticeList[0][0] - lastNum):
-        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
+    for noticeIndx in range(notice_list[0][0] - lastNum):
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice_list[noticeIndx])
 
 
 if __name__ == '__main__':
-    create_table()
+    createTable()
