@@ -115,7 +115,7 @@ def updateDB():
     c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
     lastNum = c.fetchone()[0]
 
-    notice_list = getNotice(amount=30)
+    notice_list = getNotice(amount=15)
 
     for noticeIndx in range(notice_list[0][0] - lastNum):
         c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice_list[noticeIndx])
