@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import schedule
 
 import sqlite3
-import pymysql
+# import pymysql
 
 
 URLs = {
@@ -18,12 +18,15 @@ URLs = {
     '대학원 계약학과': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90+%EA%B3%84%EC%95%BD%ED%95%99%EA%B3%BC'
 }
 
-num = None
-link = None
-title = None
-category = None
-created_at = None
-content = None
+# id : mysql auto increasement 되는 id
+# num : 전체 카테고리 기준 개별 번호(공지사항 번호)
+# link : 공지의 링크
+# title : 공지글 제목, 가끔 수정될 때 있음 → 업데이트할 때마다 확인 필요
+# category : 공지글 카테고리 (전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과)
+# created_at : 공지글 게시 날짜 및 시간 (YYYY-MM-DD hh:mm:00) (sec는 0초로 고정)
+# updated_at : 공지글 업데이트 시 갱신
+# content : 공지글 내용, 필요성은 아직 없으나 미리 보기 등의 추가 기능에 대비해서 미리 넣어둠
+# status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
 
 
 def createTable():
@@ -42,9 +45,7 @@ def connectDB():
 
     return conn, c
 
-def getNotice(searchCategory='전체', amount=1, *dataTypes):
-    global num, link, title, category, created_at, content
-    
+def getNotice(searchCategory='전체', amount=1):
     noticeList = []
 
     response = requests.get(URLs[searchCategory])
@@ -78,10 +79,7 @@ def getNotice(searchCategory='전체', amount=1, *dataTypes):
             created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
             content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
-            if dataTypes == ():
-                noticeList.append([num, link, title, category, created_at, content])
-            else:
-                noticeList.append([globals()[data] for data in dataTypes])
+            noticeList.append([num, link, title, category, created_at, content])
 
     return noticeList
 
@@ -94,14 +92,11 @@ def insertNotice(noticeList):
     conn.commit()
     conn.close()
 
-def getDB(searchCategory='전체', amount=1, *dataTypes):
+def getDB(searchCategory='전체', amount=1):
     conn, c = connectDB()
 
-    if dataTypes == ():
-        c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
-    else:
-        c.execute('SELECT ' + ', '.join(dataTypes) + ' FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
-
+    c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
+    
     noticeList = c.fetchall()
 
     conn.commit()
