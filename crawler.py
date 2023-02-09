@@ -42,12 +42,12 @@ def connectDB():
 
     return conn, c
 
-def getNotice(search_category='전체', amount=1, *data_types):
+def getNotice(searchCategory='전체', amount=1, *dataTypes):
     global num, link, title, category, created_at, content
     
-    notice_list = []
+    noticeList = []
 
-    response = requests.get(URLs[search_category])
+    response = requests.get(URLs[searchCategory])
     soup = BeautifulSoup(response.text, 'html.parser')
 
     limit = int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
@@ -59,55 +59,55 @@ def getNotice(search_category='전체', amount=1, *data_types):
 
 
     for page in range(1, pages):
-        response = requests.get(URLs[search_category] + '&page=' + str(page))
+        response = requests.get(URLs[searchCategory] + '&page=' + str(page))
         soup = BeautifulSoup(response.text, 'html.parser')
-        search_list = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
+        searchList = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-        if search_list == []:
+        if searchList == []:
             break
 
         for idx in range(15 if page != pages - 1 else amount % 15):
             num = limit - (page - 1) * 15 - idx
-            link = search_list[idx].get('href')
+            link = searchList[idx].get('href')
 
             response = requests.get(link)
             soup = BeautifulSoup(response.text, 'html.parser')
 
             title = soup.select_one('.bo_v_tit').text.strip()
-            category = soup.select_one('.bo_v_cate').text if search_category == '전체' else search_category
+            category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
             created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
             content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
-            if data_types == ():
-                notice_list.append([num, link, title, category, created_at, content])
+            if dataTypes == ():
+                noticeList.append([num, link, title, category, created_at, content])
             else:
-                notice_list.append([globals()[data] for data in data_types])
+                noticeList.append([globals()[data] for data in dataTypes])
 
-    return notice_list
+    return noticeList
 
-def insertNotice(notice_list):
+def insertNotice(noticeList):
     conn, c = connectDB()
 
-    for notice in notice_list:
+    for notice in noticeList:
         c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice)
 
     conn.commit()
     conn.close()
 
-def getDB(search_category='전체', amount=1, *data_types):
+def getDB(searchCategory='전체', amount=1, *dataTypes):
     conn, c = connectDB()
 
-    if data_types == ():
-        c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (search_category, amount))
+    if dataTypes == ():
+        c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
     else:
-        c.execute('SELECT ' + ', '.join(data_types) + ' FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (search_category, amount))
+        c.execute('SELECT ' + ', '.join(dataTypes) + ' FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
 
-    notice_list = c.fetchall()
+    noticeList = c.fetchall()
 
     conn.commit()
     conn.close()
 
-    return notice_list
+    return noticeList
 
 def updateDB():
     conn, c = connectDB()
@@ -115,10 +115,10 @@ def updateDB():
     c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
     lastNum = c.fetchone()[0]
 
-    notice_list = getNotice(amount=30)
+    noticeList = getNotice(amount=15)
 
-    for noticeIndx in range(notice_list[0][0] - lastNum):
-        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice_list[noticeIndx])
+    for noticeIndx in range(noticeList[0][0] - lastNum):
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
 
 
 if __name__ == '__main__':
