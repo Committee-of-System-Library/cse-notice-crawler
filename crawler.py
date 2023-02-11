@@ -20,14 +20,13 @@ URLs = {
     '대학원 계약학과': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90+%EA%B3%84%EC%95%BD%ED%95%99%EA%B3%BC'
 }
 
-# id : mysql auto increasement 되는 id
-# num : 전체 카테고리 기준 개별 번호(공지사항 번호)
+# num : 공지글글 개별 번호(링크에서의 wr_id 파라미터)
 # link : 공지의 링크
 # title : 공지글 제목, 가끔 수정될 때 있음 → 업데이트할 때마다 확인 필요
 # category : 공지글 카테고리 (전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과)
 # created_at : 공지글 게시 날짜 및 시간 (YYYY-MM-DD hh:mm:00) (sec는 0초로 고정)
-# updated_at : 공지글 업데이트 시 갱신
 # content : 공지글 내용, 필요성은 아직 없으나 미리 보기 등의 추가 기능에 대비해서 미리 넣어둠
+# updated_at : 공지글 업데이트 시 갱신
 # status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
 
 MAX_NOTICE_SIZE = 15
@@ -37,7 +36,7 @@ def createTable():
     c = conn.cursor()
 
     c.execute('''CREATE TABLE IF NOT EXISTS Notice
-                (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT)''')
+                (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
 
     conn.commit()
     conn.close()
@@ -62,13 +61,13 @@ def parseNoticeTableFromPage(searchCategory, page):
 
 def getNoticeDataFromNotice(notice):
     link = notice.get('href')
-    num = int(link.split('wr_id')[-1].split('&')[0])
+    num = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
 
     response = requests.get(link)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     title = soup.select_one('.bo_v_tit').text.strip()
-    category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
+    category = soup.select_one('.bo_v_cate').text
     created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
     content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
@@ -101,7 +100,7 @@ def insertNotice(noticeList):
     conn, c = connectDB()
 
     for notice in noticeList:
-        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', notice)
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.getList())
 
     conn.commit()
     conn.close()
@@ -109,14 +108,16 @@ def insertNotice(noticeList):
 def getDataFromDB(searchCategory='전체', amount=1):
     conn, c = connectDB()
 
-    c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
-    
-    noticeList = c.fetchall()
+    if searchCategory == '전체':
+        c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT ?', (amount,))
+    else:
+        c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (searchCategory, amount))
 
-    conn.commit()
+    result = c.fetchall()
+
     conn.close()
 
-    return noticeList
+    return result
 
 def updateDB():
     conn, c = connectDB()
@@ -127,10 +128,11 @@ def updateDB():
     noticeList = crawlNoticeFromWeb(amount=15)
 
     for noticeIndx in range(noticeList[0][0] - lastNum):
-        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
+        c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
 
 
 if __name__ == '__main__':
-    noticeList = crawlNoticeFromWeb('전체', 15)
-    print(len(noticeList))
-    print(noticeList[0].title)
+    createTable()
+
+    noticeList = crawlNoticeFromWeb(amount=-1)
+    insertNotice(noticeList)
