@@ -1,5 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, PageElement
 
 from notice import Notice
 
@@ -20,15 +20,6 @@ URLs = {
     '대학원 계약학과': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90+%EA%B3%84%EC%95%BD%ED%95%99%EA%B3%BC'
 }
 
-# num : 공지글글 개별 번호(링크에서의 wr_id 파라미터)
-# link : 공지의 링크
-# title : 공지글 제목, 가끔 수정될 때 있음 → 업데이트할 때마다 확인 필요
-# category : 공지글 카테고리 (전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과)
-# created_at : 공지글 게시 날짜 및 시간 (YYYY-MM-DD hh:mm:00) (sec는 0초로 고정)
-# content : 공지글 내용, 필요성은 아직 없으나 미리 보기 등의 추가 기능에 대비해서 미리 넣어둠
-# updated_at : 공지글 업데이트 시 갱신
-# status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
-
 MAX_NOTICE_SIZE = 15
 
 def createTable():
@@ -47,19 +38,19 @@ def connectDB():
 
     return conn, c
 
-def parseNoticeTotalCount():
+def parseNoticeTotalCount() -> int:
     response = requests.get(URLs['전체'])
     soup = BeautifulSoup(response.text, 'html.parser')
 
     return int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
 
-def parseNoticeTableFromPage(searchCategory, page):
+def parseNoticeTableFromPage(searchCategory, page) -> list[PageElement]:
     response = requests.get(URLs[searchCategory] + '&page=' + str(page))
     soup = BeautifulSoup(response.text, 'html.parser')
 
     return list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-def getNoticeDataFromNotice(notice):
+def getNoticeDataFromNotice(notice: PageElement):
     link = notice.get('href')
     num = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
 
@@ -73,7 +64,17 @@ def getNoticeDataFromNotice(notice):
 
     return Notice(num, link, title, category, created_at, content)
 
-def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
+def crawlNoticeFromWeb(searchCategory: str='전체', amount: int=-1):
+    """공지사항을 크롤링하는 함수
+
+    Args:
+        searchCategory (str, optional): 크롤링할 공지사항의 카테고리. Defaults to '전체'.
+        amount (int, optional): 크롤링할 공지사항의 개수. Defaults to -1.
+
+    Returns:
+        list[Notice]: 크롤링한 공지사항 리스트
+    """
+    
     if amount == 0:
         return []
 
