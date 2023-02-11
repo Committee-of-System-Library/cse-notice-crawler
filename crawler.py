@@ -28,6 +28,7 @@ URLs = {
 # content : 공지글 내용, 필요성은 아직 없으나 미리 보기 등의 추가 기능에 대비해서 미리 넣어둠
 # status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
 
+MAX_NOTICE_SIZE = 15
 
 def createTable():
     conn = sqlite3.connect('notice.db')
@@ -45,31 +46,39 @@ def connectDB():
 
     return conn, c
 
-def getNotice(searchCategory='전체', amount=1):
-    noticeList = []
-
-    response = requests.get(URLs[searchCategory])
+def parseNoticeTotalCount():
+    response = requests.get(URLs['전체'])
     soup = BeautifulSoup(response.text, 'html.parser')
+    return int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
 
-    limit = int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
+def parseNoticeTableFromPage(searchCategory, page):
+    response = requests.get(URLs[searchCategory] + '&page=' + str(page))
+    soup = BeautifulSoup(response.text, 'html.parser')
+    return list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-    if amount > limit or amount < 0:
-        amount = limit
+def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
+    if amount == 0:
+        return []
 
-    pages = amount // 15 + 2
+    noticeList = list()
+
+    noticeTotalCount = parseNoticeTotalCount()
+
+    if amount > noticeTotalCount or amount == -1:
+        amount = noticeTotalCount
+
+    pages = amount // MAX_NOTICE_SIZE + 2
 
 
     for page in range(1, pages):
-        response = requests.get(URLs[searchCategory] + '&page=' + str(page))
-        soup = BeautifulSoup(response.text, 'html.parser')
-        searchList = list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
+        noticeTable = parseNoticeTableFromPage(searchCategory, page)
 
-        if searchList == []:
+        if noticeTable == []:
             break
 
-        for idx in range(15 if page != pages - 1 else amount % 15):
-            num = limit - (page - 1) * 15 - idx
-            link = searchList[idx].get('href')
+        for idx in range(MAX_NOTICE_SIZE if page != pages - 1 else amount % MAX_NOTICE_SIZE):
+            num = noticeTotalCount - (page - 1) * 15 - idx
+            link = noticeTable[idx].get('href')
 
             response = requests.get(link)
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -110,11 +119,11 @@ def updateDB():
     c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
     lastNum = c.fetchone()[0]
 
-    noticeList = getNotice(amount=15)
+    noticeList = crawlNoticeFromWeb(amount=15)
 
     for noticeIndx in range(noticeList[0][0] - lastNum):
         c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
 
 
 if __name__ == '__main__':
-    createTable()
+    print(crawlNoticeFromWeb('전체', 15))
