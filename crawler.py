@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 
+from notice import Notice
+
 import schedule
 
 import sqlite3
@@ -73,12 +75,12 @@ def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
     for page in range(1, pages):
         noticeTable = parseNoticeTableFromPage(searchCategory, page)
 
-        if noticeTable == []:
-            break
+        if page == pages - 1:
+            noticeTable = noticeTable[:amount % MAX_NOTICE_SIZE]
 
-        for idx in range(MAX_NOTICE_SIZE if page != pages - 1 else amount % MAX_NOTICE_SIZE):
+        for idx, notice in enumerate(noticeTable):
             num = noticeTotalCount - (page - 1) * 15 - idx
-            link = noticeTable[idx].get('href')
+            link = notice.get('href')
 
             response = requests.get(link)
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -88,7 +90,7 @@ def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
             created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
             content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
-            noticeList.append([num, link, title, category, created_at, content])
+            noticeList.append(Notice(num, link, title, category, created_at, content))
 
     return noticeList
 
@@ -101,7 +103,7 @@ def insertNotice(noticeList):
     conn.commit()
     conn.close()
 
-def getDB(searchCategory='전체', amount=1):
+def getDataFromDB(searchCategory='전체', amount=1):
     conn, c = connectDB()
 
     c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY created_at DESC LIMIT ?', (searchCategory, amount))
@@ -126,4 +128,6 @@ def updateDB():
 
 
 if __name__ == '__main__':
-    print(crawlNoticeFromWeb('전체', 15))
+    noticeList = crawlNoticeFromWeb('전체', 15)
+    print(len(noticeList))
+    print(noticeList[0].title)
