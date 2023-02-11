@@ -51,12 +51,28 @@ def connectDB():
 def parseNoticeTotalCount():
     response = requests.get(URLs['전체'])
     soup = BeautifulSoup(response.text, 'html.parser')
+
     return int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
 
 def parseNoticeTableFromPage(searchCategory, page):
     response = requests.get(URLs[searchCategory] + '&page=' + str(page))
     soup = BeautifulSoup(response.text, 'html.parser')
+
     return list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
+
+def getNoticeDataFromNotice(notice):
+    link = notice.get('href')
+    num = int(link.split('wr_id')[-1].split('&')[0])
+
+    response = requests.get(link)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    title = soup.select_one('.bo_v_tit').text.strip()
+    category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
+    created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
+    content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
+
+    return Notice(num, link, title, category, created_at, content)
 
 def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
     if amount == 0:
@@ -65,12 +81,10 @@ def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
     noticeList = list()
 
     noticeTotalCount = parseNoticeTotalCount()
-
     if amount > noticeTotalCount or amount == -1:
         amount = noticeTotalCount
 
     pages = amount // MAX_NOTICE_SIZE + 2
-
 
     for page in range(1, pages):
         noticeTable = parseNoticeTableFromPage(searchCategory, page)
@@ -78,19 +92,8 @@ def crawlNoticeFromWeb(searchCategory='전체', amount=-1):
         if page == pages - 1:
             noticeTable = noticeTable[:amount % MAX_NOTICE_SIZE]
 
-        for idx, notice in enumerate(noticeTable):
-            num = noticeTotalCount - (page - 1) * 15 - idx
-            link = notice.get('href')
-
-            response = requests.get(link)
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            title = soup.select_one('.bo_v_tit').text.strip()
-            category = soup.select_one('.bo_v_cate').text if searchCategory == '전체' else searchCategory
-            created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
-            content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
-
-            noticeList.append(Notice(num, link, title, category, created_at, content))
+        for notice in noticeTable:
+            noticeList.append(getNoticeDataFromNotice(notice))
 
     return noticeList
 
