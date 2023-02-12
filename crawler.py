@@ -31,19 +31,19 @@ class Crawler:
         self.conn = conn
         self.c = c
 
-    def __parseNoticeTotalCount(self) -> int:
+    def __parse_notice_total_count(self) -> int:
         response = requests.get(URLs['전체'])
         soup = BeautifulSoup(response.text, 'html.parser')
 
         return int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
 
-    def __parseNoticeTable(self, searchCategory, page) -> list[PageElement]:
-        response = requests.get(URLs[searchCategory] + '&page=' + str(page))
+    def __parse_notice_table(self, search_category, page) -> list[PageElement]:
+        response = requests.get(URLs[search_category] + '&page=' + str(page))
         soup = BeautifulSoup(response.text, 'html.parser')
 
         return list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-    def __getNoticeData(self, notice: PageElement) -> Notice:
+    def __get_notice_data(self, notice: PageElement) -> Notice:
         link = notice.get('href')
         num = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
 
@@ -57,11 +57,11 @@ class Crawler:
 
         return Notice(num, link, title, category, created_at, content)
 
-    def crawlNoticeFromWeb(self, searchCategory: str='전체', amount: int=-1) -> list[Notice]:
+    def crawl_notice_from_web(self, search_category: str='전체', amount: int=-1) -> list[Notice]:
         """공지사항을 크롤링하는 함수
 
         Args:
-            searchCategory (str, optional): 크롤링할 공지사항의 카테고리. Defaults to '전체'.
+            search_category (str, optional): 크롤링할 공지사항의 카테고리. Defaults to '전체'.
             amount (int, optional): 크롤링할 공지사항의 개수. Defaults to -1.
 
         Returns:
@@ -71,63 +71,63 @@ class Crawler:
         if amount == 0:
             return []
 
-        noticeList = list()
+        notice_list = list()
 
-        noticeTotalCount = self.__parseNoticeTotalCount()
-        if amount > noticeTotalCount or amount == -1:
-            amount = noticeTotalCount
+        notice_total_count = self.__parse_notice_total_count()
+        if amount > notice_total_count or amount == -1:
+            amount = notice_total_count
 
         pages = amount // MAX_NOTICE_SIZE + 2
 
         for page in range(1, pages):
-            noticeTable = self.__parseNoticeTable(searchCategory, page)
+            notice_table = self.__parse_notice_table(search_category, page)
 
             if page == pages - 1:
-                noticeTable = noticeTable[:amount % MAX_NOTICE_SIZE]
+                notice_table = notice_table[:amount % MAX_NOTICE_SIZE]
 
-            for notice in noticeTable:
-                noticeList.append(self.__getNoticeData(notice))
+            for notice in notice_table:
+                notice_list.append(self.__get_notice_data(notice))
 
-        return noticeList
+        return notice_list
 
-    def insertNotice(self, noticeList: list[Notice]):
+    def insert_notice(self, notice_list: list[Notice]):
         """공지사항을 DB에 저장하는 함수
 
         Args:
-            noticeList (list[Notice]): 저장할 공지사항 리스트
+            notice_list (list[Notice]): 저장할 공지사항 리스트
         """
 
-        for notice in noticeList:
-            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.getList())
+        for notice in notice_list:
+            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.get_data())
 
-    def getDataFromDB(self, searchCategory: str='전체', amount: int=1) -> list[Notice]:
+    def get_data_from_DB(self, search_category: str='전체', amount: int=1) -> list[Notice]:
         """DB에서 공지사항을 가져오는 함수
 
         Args:
-            searchCategory (str, optional): 가져올 공지사항의 카테고리. Defaults to '전체'.
+            search_category (str, optional): 가져올 공지사항의 카테고리. Defaults to '전체'.
             amount (int, optional): 가져올 공지사항의 개수. Defaults to 1.
 
         Returns:
             list[Notice]: 가져온 공지사항 리스트
         """
 
-        if searchCategory == '전체':
+        if search_category == '전체':
             self.c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT ?', (amount,))
         else:
-            self.c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (searchCategory, amount))
+            self.c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (search_category, amount))
 
         result = self.c.fetchall()
 
         return result
 
-    def updateDB(self):
+    def update_DB(self):
         """DB를 업데이트하는 함수
         """
 
         self.c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
-        lastNum = self.c.fetchone()[0]
+        last_num = self.c.fetchone()[0]
 
-        noticeList = crawlNoticeFromWeb(amount=15)
+        notice_list = crawl_notice_from_web(amount=15)
 
-        for noticeIndx in range(noticeList[0][0] - lastNum):
-            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
+        for notice_index in range(notice_list[0][0] - last_num):
+            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice_list[notice_index])

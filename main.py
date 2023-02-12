@@ -2,7 +2,7 @@ from crawler import Crawler
 
 crawler = Crawler()
 
-noticeList = crawler.getDataFromDB(amount=10)
+notice_list = crawler.get_data_from_DB()
 
-for notice in noticeList:
+for notice in notice_list:
     print(notice)

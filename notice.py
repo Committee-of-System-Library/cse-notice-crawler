@@ -19,5 +19,5 @@ class Notice:
         self.updated_at = updated_at
         self.status = status
 
-    def getList(self):
+    def get_data(self):
         return [self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status]
