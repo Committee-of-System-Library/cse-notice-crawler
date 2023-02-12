@@ -44,13 +44,13 @@ def parseNoticeTotalCount() -> int:
 
     return int(soup.select_one('tbody tr:not(.bo_notice) td.td_num2').text.strip())
 
-def parseNoticeTableFromPage(searchCategory, page) -> list[PageElement]:
+def parseNoticeTable(searchCategory, page) -> list[PageElement]:
     response = requests.get(URLs[searchCategory] + '&page=' + str(page))
     soup = BeautifulSoup(response.text, 'html.parser')
 
     return list(soup.select('tbody tr:not(.bo_notice) td.td_subject div.bo_tit a'))
 
-def getNoticeDataFromNotice(notice: PageElement):
+def getNoticeData(notice: PageElement):
     link = notice.get('href')
     num = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
 
@@ -87,13 +87,13 @@ def crawlNoticeFromWeb(searchCategory: str='전체', amount: int=-1):
     pages = amount // MAX_NOTICE_SIZE + 2
 
     for page in range(1, pages):
-        noticeTable = parseNoticeTableFromPage(searchCategory, page)
+        noticeTable = parseNoticeTable(searchCategory, page)
 
         if page == pages - 1:
             noticeTable = noticeTable[:amount % MAX_NOTICE_SIZE]
 
         for notice in noticeTable:
-            noticeList.append(getNoticeDataFromNotice(notice))
+            noticeList.append(getNoticeData(notice))
 
     return noticeList
 
