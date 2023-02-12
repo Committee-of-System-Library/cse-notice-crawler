@@ -97,6 +97,12 @@ class Crawler:
         return noticeList
 
     def insertNotice(self, noticeList: list[Notice]):
+        """공지사항을 DB에 저장하는 함수
+
+        Args:
+            noticeList (list[Notice]): 저장할 공지사항 리스트
+        """
+
         conn, c = self.connectDB()
 
         for notice in noticeList:
@@ -105,7 +111,17 @@ class Crawler:
         conn.commit()
         conn.close()
 
-    def getDataFromDB(self, searchCategory: str='전체', amount: int=1):
+    def getDataFromDB(self, searchCategory: str='전체', amount: int=1) -> list[Notice]:
+        """DB에서 공지사항을 가져오는 함수
+
+        Args:
+            searchCategory (str, optional): 가져올 공지사항의 카테고리. Defaults to '전체'.
+            amount (int, optional): 가져올 공지사항의 개수. Defaults to 1.
+
+        Returns:
+            list[Notice]: 가져온 공지사항 리스트
+        """
+
         conn, c = self.connectDB()
 
         if searchCategory == '전체':
@@ -120,6 +136,9 @@ class Crawler:
         return result
 
     def updateDB(self):
+        """DB를 업데이트하는 함수
+        """
+
         conn, c = self.connectDB()
 
         c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
