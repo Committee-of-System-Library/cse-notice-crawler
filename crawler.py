@@ -21,21 +21,15 @@ MAX_NOTICE_SIZE = 15
 
 
 class Crawler:
-    def createTable(self):
+    def __init__(self):
         conn = sqlite3.connect('notice.db')
         c = conn.cursor()
 
         c.execute('''CREATE TABLE IF NOT EXISTS Notice
                     (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
 
-        conn.commit()
-        conn.close()
-
-    def connectDB(self):
-        conn = sqlite3.connect('notice.db')
-        c = conn.cursor()
-
-        return conn, c
+        self.conn = conn
+        self.c = c
 
     def __parseNoticeTotalCount(self) -> int:
         response = requests.get(URLs['전체'])
@@ -103,13 +97,8 @@ class Crawler:
             noticeList (list[Notice]): 저장할 공지사항 리스트
         """
 
-        conn, c = self.connectDB()
-
         for notice in noticeList:
-            c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.getList())
-
-        conn.commit()
-        conn.close()
+            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.getList())
 
     def getDataFromDB(self, searchCategory: str='전체', amount: int=1) -> list[Notice]:
         """DB에서 공지사항을 가져오는 함수
@@ -122,16 +111,12 @@ class Crawler:
             list[Notice]: 가져온 공지사항 리스트
         """
 
-        conn, c = self.connectDB()
-
         if searchCategory == '전체':
-            c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT ?', (amount,))
+            self.c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT ?', (amount,))
         else:
-            c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (searchCategory, amount))
+            self.c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (searchCategory, amount))
 
-        result = c.fetchall()
-
-        conn.close()
+        result = self.c.fetchall()
 
         return result
 
@@ -139,12 +124,10 @@ class Crawler:
         """DB를 업데이트하는 함수
         """
 
-        conn, c = self.connectDB()
-
-        c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
-        lastNum = c.fetchone()[0]
+        self.c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
+        lastNum = self.c.fetchone()[0]
 
         noticeList = crawlNoticeFromWeb(amount=15)
 
         for noticeIndx in range(noticeList[0][0] - lastNum):
-            c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])
+            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', noticeList[noticeIndx])

@@ -1,5 +1,8 @@
 from crawler import Crawler
 
-noticeList = Crawler().crawlNoticeFromWeb('전체', 10)
+crawler = Crawler()
 
-print(noticeList[0].title)
+noticeList = crawler.getDataFromDB(amount=10)
+
+for notice in noticeList:
+    print(notice)
