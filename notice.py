@@ -20,4 +20,4 @@ class Notice:
         self.status = status
 
     def get_data(self):
-        return [self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status]
+        return (self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)

@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup, PageElement
 from notice import Notice
 
 import sqlite3
-# import pymysql
+import pymysql
 
 URLs = {
         '전체': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1',
@@ -22,11 +22,13 @@ MAX_NOTICE_SIZE = 15
 
 class Crawler:
     def __init__(self):
-        conn = sqlite3.connect('notice.db')
+        conn = pymysql.connect(host='127.0.0.1', user='root', password='sean030502', charset='utf8', db='notice')
         c = conn.cursor()
 
+        c.execute('USE notice')
         c.execute('''CREATE TABLE IF NOT EXISTS Notice
                     (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
+        c.execute('ALTER TABLE Notice CONVERT TO CHARSET UTF8')
 
         self.conn = conn
         self.c = c
@@ -98,7 +100,7 @@ class Crawler:
         """
 
         for notice in notice_list:
-            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice.get_data())
+            self.c.execute('INSERT INTO Notice VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', notice.get_data())
 
     def get_data_from_DB(self, search_category: str='전체', amount: int=1) -> list[Notice]:
         """DB에서 공지사항을 가져오는 함수
@@ -112,9 +114,9 @@ class Crawler:
         """
 
         if search_category == '전체':
-            self.c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT ?', (amount,))
+            self.c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT %s', (amount,))
         else:
-            self.c.execute('SELECT * FROM Notice WHERE category = ? ORDER BY num DESC LIMIT ?', (search_category, amount))
+            self.c.execute('SELECT * FROM Notice WHERE category = %s ORDER BY num DESC LIMIT %s', (search_category, amount))
 
         result = self.c.fetchall()
 
@@ -130,4 +132,11 @@ class Crawler:
         notice_list = crawl_notice_from_web(amount=15)
 
         for notice_index in range(notice_list[0][0] - last_num):
-            self.c.execute('INSERT INTO Notice VALUES (?, ?, ?, ?, ?, ?, ?, ?)', notice_list[notice_index])
+            self.c.execute('INSERT INTO Notice VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'.format(notice_list[notice_index]))
+
+    def close(self):
+        """DB와의 연결을 종료하는 함수
+        """
+
+        self.conn.commit()
+        self.conn.close()

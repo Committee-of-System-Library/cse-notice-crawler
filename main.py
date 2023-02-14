@@ -2,7 +2,8 @@ from crawler import Crawler
 
 crawler = Crawler()
 
-notice_list = crawler.get_data_from_DB()
+notice_list = crawler.crawl_notice_from_web(amount=-1)
 
-for notice in notice_list:
-    print(notice)
+crawler.insert_notice(notice_list)
+
+crawler.close()
