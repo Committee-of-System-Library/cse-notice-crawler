@@ -1,9 +1,11 @@
 from crawler import Crawler
+from db import DB
 
 crawler = Crawler()
+db = DB('<ip>', 1234, 'root', 'pw') # ip port user password
 
-notice_list = crawler.crawl_notice_from_web(amount=-1)
+db.create_table()
 
-crawler.insert_notice(notice_list)
+notice_list = crawler.crawl_notice_from_web(amount=1000)
 
-crawler.close()
+db.insert_notice(notice_list)

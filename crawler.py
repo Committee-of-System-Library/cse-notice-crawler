@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup, PageElement
 
 from notice import Notice
 
-import sqlite3
 import pymysql
 
 URLs = {
@@ -21,18 +20,6 @@ MAX_NOTICE_SIZE = 15
 
 
 class Crawler:
-    def __init__(self):
-        conn = pymysql.connect(host='127.0.0.1', user='root', password='sean030502', charset='utf8', db='notice')
-        c = conn.cursor()
-
-        c.execute('USE notice')
-        c.execute('''CREATE TABLE IF NOT EXISTS Notice
-                    (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
-        c.execute('ALTER TABLE Notice CONVERT TO CHARSET UTF8')
-
-        self.conn = conn
-        self.c = c
-
     def __parse_notice_total_count(self) -> int:
         response = requests.get(URLs['전체'])
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -91,52 +78,3 @@ class Crawler:
                 notice_list.append(self.__get_notice_data(notice))
 
         return notice_list
-
-    def insert_notice(self, notice_list: list[Notice]):
-        """공지사항을 DB에 저장하는 함수
-
-        Args:
-            notice_list (list[Notice]): 저장할 공지사항 리스트
-        """
-
-        for notice in notice_list:
-            self.c.execute('INSERT INTO Notice VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', notice.get_data())
-
-    def get_data_from_DB(self, search_category: str='전체', amount: int=1) -> list[Notice]:
-        """DB에서 공지사항을 가져오는 함수
-
-        Args:
-            search_category (str, optional): 가져올 공지사항의 카테고리. Defaults to '전체'.
-            amount (int, optional): 가져올 공지사항의 개수. Defaults to 1.
-
-        Returns:
-            list[Notice]: 가져온 공지사항 리스트
-        """
-
-        if search_category == '전체':
-            self.c.execute('SELECT * FROM Notice ORDER BY num DESC LIMIT %s', (amount,))
-        else:
-            self.c.execute('SELECT * FROM Notice WHERE category = %s ORDER BY num DESC LIMIT %s', (search_category, amount))
-
-        result = self.c.fetchall()
-
-        return result
-
-    def update_DB(self):
-        """DB를 업데이트하는 함수
-        """
-
-        self.c.execute('SELECT num FROM Notice ORDER BY num DESC LIMIT 1')
-        last_num = self.c.fetchone()[0]
-
-        notice_list = crawl_notice_from_web(amount=15)
-
-        for notice_index in range(notice_list[0][0] - last_num):
-            self.c.execute('INSERT INTO Notice VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'.format(notice_list[notice_index]))
-
-    def close(self):
-        """DB와의 연결을 종료하는 함수
-        """
-
-        self.conn.commit()
-        self.conn.close()
