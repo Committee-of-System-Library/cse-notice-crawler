@@ -2,6 +2,9 @@ from crawler import Crawler
 from db import DB
 
 crawler = Crawler()
-db = DB('127.0.0.1', 3306, 'root', 'sean030502') # ip port user password
+db = DB('', 3306, '', '', '') # ip port user password
 
-db.update_db()
+notice_list = db.get_data_from_db('전체', 10)
+
+for notice in notice_list:
+    print(notice)

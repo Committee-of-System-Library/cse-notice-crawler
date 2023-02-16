@@ -4,11 +4,12 @@ from notice import Notice
 from crawler import *
 
 class DB:
-    def __init__(self, host, port, user, password):
+    def __init__(self, host, port, user, password, db):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
+        self.db = db
         self.conn = None
         self.cursor = None
 
@@ -16,9 +17,9 @@ class DB:
         """DB 연결 함수
         """
 
-        self.conn = pymysql.connect(host=self.host, port=self.port, user=self.user, password=self.password, db='NOTICE_DB', charset='utf8', autocommit=True)
+        self.conn = pymysql.connect(host=self.host, port=self.port, user=self.user, password=self.password, db=self.db, charset='utf8', autocommit=True)
         self.cursor = self.conn.cursor()
-        self.cursor.execute("USE NOTICE_DB")
+        self.cursor.execute(f"USE {self.db}")
 
     def create_table(self):
         """테이블 생성 함수
