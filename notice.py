@@ -1,4 +1,4 @@
-# num : 공지글글 개별 번호(링크에서의 wr_id 파라미터)
+# id_ : 공지글글 개별 번호(링크에서의 wr_id 파라미터)
 # link : 공지의 링크
 # title : 공지글 제목, 가끔 수정될 때 있음 → 업데이트할 때마다 확인 필요
 # category : 공지글 카테고리 (전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과)
@@ -8,8 +8,8 @@
 # status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
 
 class Notice:
-    def __init__(self, num, link, title, category, created_at, content, updated_at=None, status=0):
-        self.num = num
+    def __init__(self, id_, link, title, category, created_at, content, updated_at=None, status=0):
+        self.id_ = id_
         self.link = link
         self.title = title
         self.category = category
@@ -20,4 +20,4 @@ class Notice:
         self.status = status
 
     def get_data(self):
-        return (self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)
+        return (self.id_, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)

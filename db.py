@@ -27,7 +27,7 @@ class DB:
         self._connect_db()
 
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS NOTICE_TABLE
-                    (num INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
+                    (id INTEGER PRIMARY KEY, link TEXT, title TEXT, category TEXT, created_at DateTime, content LONGTEXT, updated_at DateTime DEFAULT NULL, status INTEGER DEFAULT 0)''')
         self.cursor.execute("ALTER TABLE NOTICE_TABLE CONVERT TO CHARSET UTF8")
 
         self.disconnect_db()
@@ -38,7 +38,7 @@ class DB:
 
         self._connect_db()
 
-        self.cursor.executemany(f"INSERT INTO NOTICE_TABLE (num, link, title, category, created_at, content) VALUES (%s, %s, %s, %s, %s, %s)", [(notice.num, notice.link, notice.title, notice.category, notice.created_at, notice.content) for notice in notice_list])
+        self.cursor.executemany(f"INSERT INTO NOTICE_TABLE (id, link, title, category, created_at, content) VALUES (%s, %s, %s, %s, %s, %s)", [(notice.id_, notice.link, notice.title, notice.category, notice.created_at, notice.content) for notice in notice_list])
 
         self.disconnect_db()
 
@@ -49,9 +49,9 @@ class DB:
         self._connect_db()
 
         if search_category == '전체':
-            self.cursor.execute(f"SELECT * FROM NOTICE_TABLE ORDER BY num DESC LIMIT {amount}")
+            self.cursor.execute(f"SELECT * FROM NOTICE_TABLE ORDER BY id DESC LIMIT {amount}")
         else:
-            self.cursor.execute(f"SELECT * FROM NOTICE_TABLE WHERE category = '{search_category}' ORDER BY num DESC LIMIT {amount}")
+            self.cursor.execute(f"SELECT * FROM NOTICE_TABLE WHERE category = '{search_category}' ORDER BY id DESC LIMIT {amount}")
 
         data = self.cursor.fetchall()
         self.disconnect_db()
@@ -68,18 +68,18 @@ class DB:
         notice_list = crawler.crawl_notice_from_web(amount=10)
 
         for notice in notice_list:
-            self.cursor.execute(f"SELECT num FROM NOTICE_TABLE WHERE num = {notice.num}")
+            self.cursor.execute(f"SELECT id FROM NOTICE_TABLE WHERE id = {notice.id_}")
             data = self.cursor.fetchall()
 
             if len(data) == 0:
-                self.cursor.execute(f"INSERT INTO NOTICE_TABLE (num, link, title, category, created_at, content) VALUES ({notice.num}, '{notice.link}', '{notice.title}', '{notice.category}', '{notice.created_at}', '{notice.content}')")
+                self.cursor.execute(f"INSERT INTO NOTICE_TABLE (id, link, title, category, created_at, content) VALUES ({notice.id_}, '{notice.link}', '{notice.title}', '{notice.category}', '{notice.created_at}', '{notice.content}')")
 
             else:
-                self.cursor.execute(f"SELECT * FROM NOTICE_TABLE WHERE num = {notice.num}")
+                self.cursor.execute(f"SELECT * FROM NOTICE_TABLE WHERE id = {notice.id_}")
                 data = self.cursor.fetchall()
 
                 if data[0][2] != notice.title or data[0][3] != notice.category or data[0][5] != notice.content:
-                    self.cursor.execute(f"UPDATE NOTICE_TABLE SET title = '{notice.title}', category = '{notice.category}', content = '{notice.content}', updated_at = '{notice.created_at}', status = 2 WHERE num = {notice.num}")
+                    self.cursor.execute(f"UPDATE NOTICE_TABLE SET title = '{notice.title}', category = '{notice.category}', content = '{notice.content}', updated_at = '{notice.created_at}', status = 2 WHERE id = {notice.id_}")
 
         self.disconnect_db()
 
