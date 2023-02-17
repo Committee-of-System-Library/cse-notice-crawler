@@ -1,4 +1,5 @@
 # id_ : 공지글글 개별 번호(링크에서의 wr_id 파라미터)
+# num : 공지글 번호(링크에서의 wr_id 파라미터)
 # link : 공지의 링크
 # title : 공지글 제목, 가끔 수정될 때 있음 → 업데이트할 때마다 확인 필요
 # category : 공지글 카테고리 (전체, 일반공지, 학사, 장학, 심컴, 글솝, 대학원, 대학원 계약학과)
@@ -20,5 +21,10 @@ class Notice:
         self.updated_at = updated_at
         self.status = status
 
-    def get_data(self):
+    def get_data(self) -> tuple:
+        """Notice 객체의 데이터를 튜플로 반환하는 함수
+
+        Returns:
+            tuple: Notice 객체의 데이터를 튜플로 반환
+        """
         return (self.id_, self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)

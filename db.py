@@ -35,7 +35,10 @@ class DB:
         self.disconnect_db()
 
     def insert_notice(self, notice_list: list[Notice]):
-        """공지사항 데이터를 DB에 삽입
+        """공지사항 데이터를 DB에 저장하는 함수
+
+        Args:
+            notice_list (list[Notice]): 저장할 Notice 객체의 리스트
         """
 
         self._connect_db()
@@ -46,6 +49,13 @@ class DB:
 
     def get_data_from_db(self, search_category: str='전체', amount: int=1) -> list[Notice]:
         """DB에서 데이터를 가져오는 함수
+
+        Args:
+            search_category (str, optional): 가져올 공지사항의 카테고리. Defaults to '전체'.
+            amount (int, optional): 가져올 공지사항의 개수. Defaults to 1.
+
+        Returns:
+            list[Notice]: 가져온 Notice 객체의 리스트
         """
 
         self._connect_db()
