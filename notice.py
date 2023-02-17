@@ -8,8 +8,9 @@
 # status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
 
 class Notice:
-    def __init__(self, id_, link, title, category, created_at, content, updated_at=None, status=0):
+    def __init__(self, id_, num, link, title, category, created_at, content, updated_at=None, status='NEW'):
         self.id_ = id_
+        self.num = num
         self.link = link
         self.title = title
         self.category = category
@@ -20,4 +21,4 @@ class Notice:
         self.status = status
 
     def get_data(self):
-        return (self.id_, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)
+        return (self.id_, self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)

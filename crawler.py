@@ -34,7 +34,7 @@ class Crawler:
 
     def __get_notice_data(self, notice: PageElement) -> Notice:
         link = notice.get('href')
-        id_ = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
+        num = int(link.split('wr_id')[-1].split('&')[0].replace('=', ''))
 
         response = requests.get(link)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -44,7 +44,7 @@ class Crawler:
         created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
         content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
 
-        return Notice(id_, link, title, category, created_at, content)
+        return Notice(None, num, link, title, category, created_at, content)
 
     def crawl_notice_from_web(self, search_category: str='전체', amount: int=-1) -> list[Notice]:
         """공지사항을 크롤링하는 함수
