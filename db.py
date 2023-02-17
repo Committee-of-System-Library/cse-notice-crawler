@@ -47,7 +47,7 @@ class DB:
 
         self.disconnect_db()
 
-    def get_data_from_db(self, search_category: str='전체', amount: int=1) -> list[Notice]:
+    def get_data(self, search_category: str='전체', amount: int=1) -> list[Notice]:
         """DB에서 데이터를 가져오는 함수
 
         Args:
