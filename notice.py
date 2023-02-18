@@ -6,7 +6,7 @@
 # created_at : 공지글 게시 날짜 및 시간 (YYYY-MM-DD hh:mm:00) (sec는 0초로 고정)
 # content : 공지글 내용, 필요성은 아직 없으나 미리 보기 등의 추가 기능에 대비해서 미리 넣어둠
 # updated_at : 공지글 업데이트 시 갱신
-# status : (NEW(0), OLD(1), UPDATE(2)), 공지 알림 전송 여부를 체크하기 위한 필드
+# status : (NEW, OLD, UPDATE), 공지 알림 전송 여부를 체크하기 위한 필드
 
 class Notice:
     def __init__(self, id_, num, link, title, category, created_at, content, updated_at=None, status='NEW'):
