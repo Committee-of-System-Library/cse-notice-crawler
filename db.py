@@ -30,7 +30,6 @@ class DB:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS NOTICE_TABLE
                     (id INTEGER AUTO_INCREMENT PRIMARY KEY, num INTEGER, link VARCHAR(255), title VARCHAR(255), category VARCHAR(255), created_at DateTime, content LONGTEXT, updated_at DateTime, status VARCHAR(255) DEFAULT 'NEW')''')
         self.cursor.execute("ALTER TABLE NOTICE_TABLE CONVERT TO CHARSET UTF8")
-        # self.cursor.execute("ALTER TABLE NOTICE_TABLE AUTO_INCREMENT = 1")
 
         self.disconnect_db()
 
@@ -65,10 +64,13 @@ class DB:
         else:
             self.cursor.execute(f"SELECT * FROM NOTICE_TABLE WHERE category = '{search_category}' ORDER BY created_at DESC LIMIT {amount}")
 
-        data = self.cursor.fetchall()
+        data_list = self.cursor.fetchall()
+
+        notice_list = [Notice(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]) for data in data_list]
+
         self.disconnect_db()
 
-        return data
+        return notice_list
 
     def update_db(self):
         """DB를 업데이트 하는 함수
