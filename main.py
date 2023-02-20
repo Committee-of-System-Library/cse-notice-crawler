@@ -1,12 +1,11 @@
 from crawler import Crawler
-from db import DB
-
-import schedule
 
 crawler = Crawler()
-db = DB('127.0.0.1', 3306, 'root', 'sean030502', 'NOTICE_DB') # ip port user password
 
-notice_list = db.get_data('전체', 10)
+url = 'https://httpbin.org/post'
 
-for notice in notice_list:
-    print(notice)
+notice_list = crawler.crawl_notice_from_web(amount=10)
+
+response = crawler.send_notice_to_api(url, notice_list)
+
+print(response.json())

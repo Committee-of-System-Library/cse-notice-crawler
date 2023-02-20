@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup, PageElement
 
-from notice import Notice
+from notice import *
 
 URLs = {
         '전체': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1',
@@ -76,3 +76,15 @@ class Crawler:
                 notice_list.append(self.__get_notice_data(notice))
 
         return notice_list
+
+    def send_notice_to_api(self, url: str, notice_list: list[Notice]) -> int:
+        """크롤링한 공지사항을 api로 전송하는 함수
+
+        Args:
+            url (str): api의 url
+            notice_list (list[Notice]): 전송할 공지사항 리스트
+        """
+
+        response = requests.post(url, convert_notice_list_to_json(notice_list))
+
+        return response

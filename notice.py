@@ -1,3 +1,5 @@
+import json
+
 # id_ : 공지글의 고유 번호, DB에서 자동으로 생성되는 값, 공지글의 고유 식별자로 사용
 # num : 공지글 번호(링크에서의 wr_id 파라미터)
 # link : 공지의 링크
@@ -16,7 +18,21 @@ class Notice:
         self.title = title
         self.category = category
         self.created_at = created_at
-        self.updated_at = updated_at
         self.content = content
         self.updated_at = updated_at
         self.status = status
+
+
+def convert_notice_list_to_json(notice_list: list[Notice]) -> str:
+    """공지사항 리스트를 json으로 변환하는 함수
+
+    Args:
+        notice_list (list[Notice]): 공지사항 리스트
+
+    Returns:
+        str: json으로 변환된 공지사항 리스트
+    """
+
+    notice_list = [notice.__dict__ for notice in notice_list]
+
+    return json.dumps({'data': notice_list}, ensure_ascii=False).encode('utf-8')
