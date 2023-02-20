@@ -20,11 +20,3 @@ class Notice:
         self.content = content
         self.updated_at = updated_at
         self.status = status
-
-    def get_data(self) -> tuple:
-        """Notice 객체의 데이터를 튜플로 반환하는 함수
-
-        Returns:
-            tuple: Notice 객체의 데이터를 튜플로 반환
-        """
-        return (self.id_, self.num, self.link, self.title, self.category, self.created_at, self.content, self.updated_at, self.status)

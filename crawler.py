@@ -3,8 +3,6 @@ from bs4 import BeautifulSoup, PageElement
 
 from notice import Notice
 
-import pymysql
-
 URLs = {
         '전체': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1',
         '일반공지': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EC%9D%BC%EB%B0%98%EA%B3%B5%EC%A7%80',
