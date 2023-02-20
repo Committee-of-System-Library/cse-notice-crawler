@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup, PageElement
 
+import datetime
+
 from notice import *
 
 URLs = {
@@ -39,10 +41,11 @@ class Crawler:
 
         title = soup.select_one('.bo_v_tit').text.strip()
         category = soup.select_one('.bo_v_cate').text
-        created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
         content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
+        created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
+        saved_at = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        return Notice(None, num, link, title, category, created_at, content)
+        return Notice(num, link, title, category, content, created_at, saved_at)
 
     def crawl_notice_from_web(self, search_category: str='전체', amount: int=-1) -> list[Notice]:
         """공지사항을 크롤링하는 함수
