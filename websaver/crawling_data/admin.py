@@ -9,7 +9,5 @@ class NoticeAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     list_per_page = 25
 
-    readonly_fields = ('created_at', 'saved_at', 'updated_at', 'status')
-
 # Register your models here.
 admin.site.register(Notice, NoticeAdmin)
