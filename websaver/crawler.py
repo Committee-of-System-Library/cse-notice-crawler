@@ -110,6 +110,7 @@ class Crawler:
 
 if __name__ == '__main__':
     crawler = Crawler()
-    notice_list = crawler.crawl_notice_from_web('일반공지', 10)
+
+    notice_list = crawler.crawl_notice_from_web('전체', 2000)
 
     crawler.send_notice_to_db(notice_list)
