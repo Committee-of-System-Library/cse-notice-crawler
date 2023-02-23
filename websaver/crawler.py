@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup, PageElement
 
+import json
 import os
 import django
 
@@ -100,17 +101,32 @@ class Crawler:
                 created_at=notice[5]
             )
 
-    def send_notice_to_api(self, notice_list: list[tuple]):
+    def send_notice_to_api(self, url: str, notice_list: list[tuple]):
         """크롤링한 공지사항을 API에 저장하는 함수
 
         Args:
             notice_list (list[tuple]): 크롤링한 공지사항 리스트
         """
-        pass
+
+        data_list = json.dumps(
+            {'data': [{
+                'num': notice[0],
+                'link': notice[1],
+                'title': notice[2],
+                'category': notice[3],
+                'content': notice[4],
+                'created_at': notice[5],
+                'updated_at': None,
+                'status': 'NEW'
+            } for notice in notice_list]},
+            ensure_ascii=False
+        ).encode('utf-8')
+
+        return requests.post(url, data=data_list)
 
 if __name__ == '__main__':
     crawler = Crawler()
-
-    notice_list = crawler.crawl_notice_from_web('전체', 2000)
-
-    crawler.send_notice_to_db(notice_list)
+    url = 'https://httpbin.org/post'
+    notice_list = crawler.crawl_notice_from_web('전체', 5)
+    response = crawler.send_notice_to_api(url, notice_list)
+    print(response.json()['data'])
