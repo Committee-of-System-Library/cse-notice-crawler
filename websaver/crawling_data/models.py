@@ -19,9 +19,6 @@ class Notice(models.Model):
     category = models.CharField(max_length=100)
     content = models.TextField()
     created_at = models.DateTimeField()
-    saved_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    saved_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=10, default='NEW')
-
-    def __str__(self):
-        return f'{self.num}'
