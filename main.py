@@ -1,11 +1,16 @@
+import schedule
+
 from crawler import Crawler
 
 crawler = Crawler()
-
 url = 'https://httpbin.org/post'
 
-notice_list = crawler.crawl_notice_from_web(amount=5)
+def run():
+    notice_list = crawler.crawl_notice_from_web(amount=100)
+    response = crawler.send_notice_to_api(url, notice_list)
+    print(response)
 
-response = crawler.send_notice_to_api(url, notice_list)
+schedule.every(5).minutes.do(run)
 
-print(response.json()['data'])
+while True:
+    schedule.run_pending()
