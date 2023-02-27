@@ -1,12 +1,17 @@
-from crawler import Crawler
-from db import DB
-
 import schedule
 
+from crawler import Crawler
+
 crawler = Crawler()
-db = DB('127.0.0.1', 3306, 'root', 'sean030502', 'NOTICE_DB') # ip port user password
+url = 'https://httpbin.org/post'
 
-notice_list = db.get_data('전체', 10)
+def run():
+    notice_list = crawler.crawl_notice_from_web(amount=100)
+    response = crawler.send_notice_to_api(url, notice_list)
+    print(response)
 
-for notice in notice_list:
-    print(notice)
+if __name__ == '__main__':
+    schedule.every(5).minutes.do(run)
+
+    while True:
+        schedule.run_pending()
