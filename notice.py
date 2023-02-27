@@ -11,15 +11,13 @@ import json
 # status : (NEW, OLD, UPDATE), 공지 알림 전송 여부를 체크하기 위한 필드
 
 class Notice:
-    def __init__(self, num, link, title, category, content, created_at, saved_at, updated_at=None, status='NEW'):
+    def __init__(self, num, link, title, category, content, created_at, status='NEW'):
         self.num = num
         self.link = link
         self.title = title
         self.category = category
         self.content = content
         self.created_at = created_at
-        self.saved_at = saved_at
-        self.updated_at = updated_at
         self.status = status
 
 
