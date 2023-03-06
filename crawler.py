@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup, PageElement
+import json
 
 from notice import *
 
@@ -13,6 +14,18 @@ URLs = {
         '대학원': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90',
         '대학원 계약학과': 'https://computer.knu.ac.kr/bbs/board.php?bo_table=sub5_1&sca=%EB%8C%80%ED%95%99%EC%9B%90+%EA%B3%84%EC%95%BD%ED%95%99%EA%B3%BC'
     }
+
+CATEGORY_ALIAS = {
+    '전체' : 'ALL',
+    '일반공지' : 'NORMAL',
+    '학사' : 'STUDENT',
+    '장학' : 'SCHOLARSHIP',
+    '심컴' : 'SIM_COM',
+    '글솝' : 'GL_SOP',
+    '인컴' : 'SIM_COM',
+    '대학원' : 'GRADUATE_SCHOOL',
+    '대학원 계약학과' : 'GRADUATE_CONTRACT'
+}
 
 MAX_NOTICE_SIZE = 15
 
@@ -38,7 +51,7 @@ class Crawler:
         soup = BeautifulSoup(response.text, 'html.parser')
 
         title = soup.select_one('.bo_v_tit').text.strip()
-        category = soup.select_one('.bo_v_cate').text
+        category = CATEGORY_ALIAS[soup.select_one('.bo_v_cate').text]
         content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
         created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
 
