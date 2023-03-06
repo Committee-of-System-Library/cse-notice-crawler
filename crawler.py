@@ -85,6 +85,12 @@ class Crawler:
             notice_list (list[Notice]): 전송할 공지사항 리스트
         """
 
-        response = requests.post(url, convert_notice_list_to_json(notice_list))
+        print({'data': [notice.__dict__ for notice in notice_list]})
+
+        response = requests.post(
+            url, 
+            json={'data': [notice.__dict__ for notice in notice_list]}, 
+            headers={'Content-Type': 'application/json'}
+            )
 
         return response
