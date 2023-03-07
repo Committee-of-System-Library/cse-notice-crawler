@@ -5,10 +5,10 @@ from crawler import Crawler
 from notice import *
 
 crawler = Crawler()
-url = 'http://52.78.131.123'
+url = 'http://52.78.131.123:8111/notice'
 
 def run():
-    notice_list = crawler.crawl_notice_from_web(amount=10)
+    notice_list = crawler.crawl_notice_from_web(amount=100)
     response = crawler.send_notice_to_api(url, notice_list)
     print(response)
 
