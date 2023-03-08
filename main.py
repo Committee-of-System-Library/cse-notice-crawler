@@ -1,4 +1,3 @@
-import schedule
 import json
 import os
 
@@ -15,8 +14,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-    schedule.every(5).minutes.do(run)
-
-    while True:
-        schedule.run_pending()
-        
