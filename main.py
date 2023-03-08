@@ -1,11 +1,12 @@
 import schedule
 import json
+import os
 
 from crawler import Crawler
 from notice import *
 
 crawler = Crawler()
-url = 'http://52.78.131.123:8111/notice'
+url = os.getenv(key='API_URL')
 
 def run():
     notice_list = crawler.crawl_notice_from_web(amount=100)
