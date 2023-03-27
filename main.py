@@ -6,7 +6,7 @@ from crawler import Crawler
 from notice import *
 
 crawler = Crawler()
-url = os.environ['API_URL']
+# url = os.environ['API_URL']
 
 def run():
     print(f'{datetime.now()} - Start crawling')
@@ -16,4 +16,6 @@ def run():
     print(f'{datetime.now()} - Finish sending - {response}')
 
 if __name__ == '__main__':
-    run()
+    notice_list = crawler.crawl_notice_from_web(amount=10)
+    for notice in notice_list:
+        print(notice.__dict__)

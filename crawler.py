@@ -51,11 +51,13 @@ class Crawler:
         soup = BeautifulSoup(response.text, 'html.parser')
 
         title = soup.select_one('.bo_v_tit').text.strip()
+        author = soup.select_one('.sv_member').text.strip()
         category = CATEGORY_ALIAS[soup.select_one('.bo_v_cate').text]
         content = soup.select_one('#bo_v_con').text.strip().replace('\xa0', '')
+        attachment = [a.get('href') for a in soup.select('.view_file_download')] if soup.select('.view_file_download') else None
         created_at = '20' + soup.select_one('.if_date').text.replace('작성일 ', '') + ':00'
 
-        return Notice(num, link, title, category, content, created_at)
+        return Notice(num, link, title, author, category, content, attachment, created_at)
 
     def crawl_notice_from_web(self, search_category: str='전체', amount: int=-1) -> list[Notice]:
         """공지사항을 크롤링하는 함수
