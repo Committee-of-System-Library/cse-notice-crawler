@@ -13,10 +13,10 @@ employmentCnt = os.environ['EMPLOYMENT_CNT']
 def run(typeSelect: str):
     #
     # Start Function
-    #
+    # 
     # Parameter)
     #   typeSelect: 가져올 공지 종류 선택 (공지사항 / 학부인재모집 / 취업정보)
-    #
+    #    
     match (typeSelect):
         case '-Notice':
             print(f'\n{datetime.now()} - Start crawling ({typeSelect[1:]})')
@@ -39,3 +39,4 @@ if __name__ == '__main__':
         print("Usage:", sys.argv[0], "-[ Notice | Recruiting | Employment ]\n")
     else:
         run(sys.argv[1])
+
